@@ -216,7 +216,7 @@ class WGanGpTest2D:
 
         self.BATCH_SIZE = 32
         self.TRAIN_RATIO = 1
-        self.GRADIENT_PENALTY_WEIGHT = 10
+        self.GRADIENT_PENALTY_WEIGHT = 0.1
 
         self.real_datas = None
         
