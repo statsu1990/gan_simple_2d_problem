@@ -15,7 +15,7 @@ Create a model that generates the following real data with gan.
 
 ## result
 The progress of learning of the wgangp generating model is following.
-![mrc](https://github.com/statsu1990/gan_simple_2d_problem/blob/master/images/generated_point_wgangp.gif)<br>
+![mrc](https://github.com/statsu1990/gan_simple_2d_problem/blob/master/images/generated_point_wgan-gp.gif)<br>
 
 The progress of learning of the gan generating model is following.
 ![mrc](https://github.com/statsu1990/gan_simple_2d_problem/blob/master/images/generated_point.gif)<br>
