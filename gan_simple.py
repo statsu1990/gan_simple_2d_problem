@@ -97,7 +97,6 @@ class GanTest2D:
 
         return x
 
-
     # gan
     def make_gan_model(self):
         # make model
@@ -209,7 +208,149 @@ class GanTest2D:
         
         return image
 
+class WGanGpTest2D:
+    def __init__(self, data_num, latent_dim, train_epoch):
+        self.DATA_NUM = data_num
+        self.LATENT_DIM = latent_dim
+        self.TRAIN_EPOCH = train_epoch
+
+        self.BATCH_SIZE = 32
+        self.TRAIN_RATIO = 1
+        self.GRADIENT_PENALTY_WEIGHT = 10
+
+        self.real_datas = None
+        
+        return
+
+    # run
+    def run(self):
+        # make real data
+        self.make_real_data(self.DATA_NUM)
+        self.__plot_scat1(self.real_datas[:,0], self.real_datas[:,1], label='real data')
+
+        # make gan model
+        self.make_gan_model()
+        
+        return
+
+    # data
+    def make_real_data(self, data_num):
+        self.real_datas = self.__sample_data_in_circle(data_num, radius=0.5)
+        #self.real_datas = self.__sample_data_in_half_circle(data_num, radius=0.5)
+        return
+    def __sample_data_in_circle(self, data_num, radius):
+        #
+        center = np.array([0.5, 0.5])
+        #center = np.array([0.0, 0.0])
+
+        # sampling num
+        sampling_margin = 2
+        sampling_num = int((1.0 * 1.0) / (radius * radius * 3.14) * data_num * sampling_margin)
+        
+        # sampling
+        end_sampling_flag = False
+        x = np.empty((0,2), float)
+        
+        # sampling roop
+        while not end_sampling_flag:
+            # x in [-1,1)
+            x_sampled = np.random.rand(sampling_num, 2) * 2.0 - 1.0
+            x_sampled = x_sampled[np.sqrt(np.sum(np.square(x_sampled - center), axis=1)) <= radius]
+
+            #
+            x = np.append(x, x_sampled, axis=0)
+
+            # check flag
+            end_sampling_flag = x.shape[0] >= data_num
+
+        # extract
+        x = x[0:data_num]
+
+        return x
+    def __sample_data_in_half_circle(self, data_num, radius):
+        #
+        center = np.array([0.5, 0.5])
+        #center = np.array([0.0, 0.0])
+
+        # sampling num
+        sampling_margin = 2
+        sampling_num = int((1.0 * 1.0) / (radius * radius * 3.14) * data_num * sampling_margin)
+        
+        # sampling
+        end_sampling_flag = False
+        x = np.empty((0,2), float)
+        
+        # sampling roop
+        while not end_sampling_flag:
+            # x in [-1,1)
+            x_sampled = np.random.rand(sampling_num, 2) * 2.0 - 1.0
+            x_sampled = x_sampled[np.sqrt(np.sum(np.square(x_sampled - center), axis=1)) <= radius]
+            x_sampled = x_sampled[x_sampled[:,1] < center[1]]
+
+            #
+            x = np.append(x, x_sampled, axis=0)
+
+            # check flag
+            end_sampling_flag = x.shape[0] >= data_num
+
+        # extract
+        x = x[0:data_num]
+
+        return x
+
+    # gan
+    def make_gan_model(self):
+        # make model
+        self.gan = gan.WGAN_GP(latent_dim=self.LATENT_DIM, data_dim=self.real_datas.shape[1])
+        self.gan.make_model(gene_hidden_neurons=[32, 16, 16], disc_hidden_neurons=[124, 64, 16], batch_size=self.BATCH_SIZE, gradient_penalty_weight=self.GRADIENT_PENALTY_WEIGHT)
+        
+        # train gan model
+        fig = plt.figure()
+        ims = []
+        ims.append([self.__plot_gene_data(self.gan, data_num=3000, show=False)])
+
+        # training epoch roop
+        for iep in range(self.TRAIN_EPOCH):
+            self.gan.train_step(self.real_datas, batch_size=self.BATCH_SIZE)
+            
+            # images for animation
+            ims.append([self.__plot_gene_data(self.gan, data_num=3000, show=False)])
+
+        # graph of real and generated data
+        ani = animation.ArtistAnimation(fig, ims, interval=100)
+        ani.save('generated_point.gif', writer='pillow')
+        plt.show()
+
+        return
+
+    def __plot_gene_data(self, gan, data_num, title=None, show=True):
+        '''
+        plot generated data
+        '''
+        latents = np.random.normal(0, 1, (300, self.LATENT_DIM))
+        gene_datas = gan.gene_model.predict(latents)
+        image = self.__plot_scat1(gene_datas[:,0], gene_datas[:,1], color='c', title=title, show=show)
+        return image
+
+    # plot
+    def __plot_scat1(self, x, y, color=None, title=None, label=None, xmin=-1, xmax=1, ymin=-1, ymax=1, show=True, save=False, savefilename=''):
+        image = plt.scatter(x, y, c=color, s=5, label=label, cmap='Blues')
+        plt.xlim(xmin, xmax)
+        plt.ylim(ymin, ymax)
+        plt.title(title)
+        if (color is not None) and (type(color) != type('string')):
+            plt.colorbar()
+        if save:
+            plt.savefig(savefilename)
+        if show:
+            plt.show()
+        
+        return image
+
 
 if __name__ == '__main__':
-    gan_test_2d = GanTest2D(500, 16, 200)
-    gan_test_2d.run()
+    #gan_test_2d = GanTest2D(500, 16, 200)
+    #gan_test_2d.run()
+
+    wgangp_test_2d = WGanGpTest2D(500, 32, 200)
+    wgangp_test_2d.run()
